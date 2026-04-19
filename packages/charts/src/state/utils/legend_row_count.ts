@@ -6,6 +6,7 @@
  * Side Public License, v 1.
  */
 
+import { computeCurrentAndLastValueReservedWidth } from './legend_value_width';
 import { DEFAULT_FONT_FAMILY } from '../../common/default_theme_attributes';
 import type { LegendItem } from '../../common/legend';
 import { LegendValue, legendValueTitlesMap } from '../../common/legend';
@@ -86,11 +87,25 @@ export function computeHorizontalLegendRowCount(args: HorizontalLegendRowCountAr
     const valuesWidth = item.values.map(({ type, label }) => {
       if (type !== LegendValue.CurrentAndLastValue && !label) return 0;
 
-      const valueLabel = type === LegendValue.CurrentAndLastValue ? maxFormattedValue ?? (label || '—') : label;
+      const isCurrentAndLastValue = type === LegendValue.CurrentAndLastValue;
+      const valueLabel = isCurrentAndLastValue ? maxFormattedValue ?? (label || '—') : label;
+      const titlePrefix = showValueTitle ? `${legendValueTitlesMap[type]?.toUpperCase() ?? ''}: ` : '';
 
-      const valueText = !showValueTitle
-        ? valueLabel
-        : `${legendValueTitlesMap[type]?.toUpperCase() ?? ''}: ${valueLabel}`;
+      if (isCurrentAndLastValue) {
+        return (
+          sharedMargin +
+          computeCurrentAndLastValueReservedWidth({
+            textMeasure,
+            prefix: titlePrefix,
+            valueLabel,
+            font,
+            fontSize: 12,
+            lineHeight: 1.5,
+          })
+        );
+      }
+
+      const valueText = `${titlePrefix}${valueLabel}`;
       return sharedMargin + textMeasure(valueText, font, 12, 1.5).width;
     });
 

@@ -12,6 +12,7 @@ import { LegendValue, legendValueTitlesMap } from '../../common/legend';
 import { withTextMeasure } from '../../utils/bbox/canvas_text_bbox_calculator';
 import type { GlobalChartState } from '../chart_state';
 import { createCustomCachedSelector } from '../create_selector';
+import { computeCurrentAndLastValueReservedWidth } from '../utils/legend_value_width';
 
 const LEGEND_VALUE_FONT = {
   fontFamily: DEFAULT_FONT_FAMILY,
@@ -39,7 +40,15 @@ export const getLongestLegendFormattedValueWidthSelector = createCustomCachedSel
   (maxFormattedValue): number | undefined => {
     if (!maxFormattedValue) return undefined;
     const title = legendValueTitlesMap[LegendValue.CurrentAndLastValue];
-    const fullText = `${title.toUpperCase()}: ${maxFormattedValue}`;
-    return withTextMeasure((textMeasure) => textMeasure(fullText, LEGEND_VALUE_FONT, 12, 1.5).width);
+    return withTextMeasure((textMeasure) =>
+      computeCurrentAndLastValueReservedWidth({
+        textMeasure,
+        prefix: `${title.toUpperCase()}: `,
+        valueLabel: `${maxFormattedValue}`,
+        font: LEGEND_VALUE_FONT,
+        fontSize: 12,
+        lineHeight: 1.5,
+      }),
+    );
   },
 );

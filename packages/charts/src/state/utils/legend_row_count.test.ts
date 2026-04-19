@@ -183,6 +183,56 @@ describe('computeHorizontalLegendRowCount', () => {
       // Without values, legend fits on a single line
       expect(result).toEqual({ isSingleLine: false, isMoreThanTwoLines: false });
     });
+
+    it('clamps the maxFormattedValue width to at least 24px (excluding the "VALUE: " prefix)', () => {
+      const proportionalMeasure: TextMeasure = (text: string) => {
+        if (text === 'VALUE: ') return { width: 40, height: 16 };
+        if (text === '1') return { width: 10, height: 16 }; // < 24px so should be clamped
+        return { width: text.length * 10, height: 16 };
+      };
+
+      const values = [{ value: null, label: '', type: LegendValue.CurrentAndLastValue }];
+      const items = [getMockedLegendItem('A', values)];
+
+      // Fits with VALUE: + "1" (40+10) but should wrap once clamped to 24px (40+24)
+      const result = computeHorizontalLegendRowCount(
+        getMockedArgs({
+          items,
+          availableWidth: 115,
+          showValueTitle: true,
+          maxFormattedValue: '1',
+          textMeasure: proportionalMeasure,
+          columnGap: 4,
+        }),
+      );
+
+      expect(result).toEqual({ isSingleLine: false, isMoreThanTwoLines: false });
+    });
+
+    it('does not apply the 24px clamp when maxFormattedValue is undefined', () => {
+      const proportionalMeasure: TextMeasure = (text: string) => {
+        if (text === 'VALUE: ') return { width: 40, height: 16 };
+        if (text === '—') return { width: 10, height: 16 };
+        return { width: text.length * 10, height: 16 };
+      };
+
+      const values = [{ value: null, label: '', type: LegendValue.CurrentAndLastValue }];
+      const items = [getMockedLegendItem('A', values)];
+
+      // This width would overflow if a 24px clamp was applied, but should fit without it.
+      const result = computeHorizontalLegendRowCount(
+        getMockedArgs({
+          items,
+          availableWidth: 125,
+          showValueTitle: true,
+          maxFormattedValue: undefined,
+          textMeasure: proportionalMeasure,
+          columnGap: 4,
+        }),
+      );
+
+      expect(result).toEqual({ isSingleLine: true, isMoreThanTwoLines: false });
+    });
   });
 
   it('returns isMoreThanTwoLines when a single item with multiple values spreads across 3 rows', () => {
